@@ -1,4 +1,5 @@
 venv
 logs
 mcqgenrator.egg-info
+env
 .env
