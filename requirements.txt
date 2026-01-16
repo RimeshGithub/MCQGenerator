@@ -3,7 +3,9 @@ langchain
 streamlit
 python-dotenv
 PyPDF2
-
+pandas
+langchain-huggingface 
+huggingface_hub
 
 #for installation of local packages
 -e .
