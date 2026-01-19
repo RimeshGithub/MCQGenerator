@@ -4,8 +4,12 @@ import traceback
 import streamlit as st
 import PyPDF2
 from langchain_ai21 import ChatAI21
+from dotenv import load_dotenv
 
-api_key = os.environ.get("AI21_API_KEY")
+# Load environment variables from .env file
+load_dotenv()
+
+api_key = os.getenv("AI21_API_KEY")
 
 # -------- QUIZ GENERATION FUNCTION --------
 
@@ -16,7 +20,7 @@ Text:
 {text}
 
 You are an expert MCQ maker. Given the above text, create a quiz of {number}
-multiple choice questions for {subject} students in a {tone} tone.
+multiple choice questions of {tone} complexity level for {subject} students.
 
 Rules:
 - Questions must NOT be repeated
@@ -63,26 +67,19 @@ Expert Review:
     return response.invoke(prompt).content
 
 
-def read_file(file_path: str):
-    if file_path.endswith(".pdf"):
-        try:
-            text = ""
-            with open(file_path, "rb") as f:
-                pdf_reader = PyPDF2.PdfReader(f)
-                for page in pdf_reader.pages:
-                    text += page.extract_text() or ""
-            return text
+def read_file(uploaded_file):
+    if uploaded_file.type == "application/pdf":
+        text = ""
+        pdf_reader = PyPDF2.PdfReader(uploaded_file)
+        for page in pdf_reader.pages:
+            text += page.extract_text() or ""
+        return text
 
-        except Exception as e:
-            raise Exception(f"Error reading PDF file: {e}")
-
-    elif file_path.endswith(".txt"):
-        with open(file_path, "r", encoding="utf-8") as f:
-            return f.read()
+    elif uploaded_file.type == "text/plain":
+        return uploaded_file.read().decode("utf-8")
 
     else:
-        raise Exception(
-            "Unsupported file format. Only PDF and TXT are supported.")
+        raise Exception("Only PDF and TXT files are supported")
 
 
 def get_table_data(quiz_str):
