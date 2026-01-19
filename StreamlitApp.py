@@ -5,8 +5,7 @@ import pandas as pd
 from dotenv import load_dotenv
 from mcqgenrator.utils import read_file, get_table_data
 import streamlit as st
-from langchain.callbacks import get_openai_callback
-from mcqgenrator.MCQGenrator import generate_evaluate_chain
+from mcqgenrator.MCQGenrator import generate_quiz, review_quiz
 from mcqgenrator.logger import logging
 
 # loading json file
@@ -41,42 +40,28 @@ with st.form("user_inputs"):
         with st.spinner("loading..."):
             try:
                 text = read_file(uploaded_file)
-                # Count tokens and the cost of API call
-                with get_openai_callback() as cb:
-                    response = generate_evaluate_chain(
-                        {
-                            "text": text,
-                            "number": mcq_count,
-                            "subject": subject,
-                            "tone": tone,
-                            "response_json": json.dumps(RESPONSE_JSON)
-                        }
-                    )
-                # st.write(response)
+                quiz_response = generate_quiz(
+                    text, mcq_count, subject, tone, json.dumps(RESPONSE_JSON))
+                review_response = review_quiz(subject, quiz_response)
 
             except Exception as e:
                 traceback.print_exception(type(e), e, e.__traceback__)
                 st.error("Error")
 
             else:
-                print(f"Total Tokens:{cb.total_tokens}")
-                print(f"Prompt Tokens:{cb.prompt_tokens}")
-                print(f"Completion Tokens:{cb.completion_tokens}")
-                print(f"Total Cost:{cb.total_cost}")
-                if isinstance(response, dict):
+                if isinstance(quiz_response, dict):
                     # Extract the quiz data from the response
-                    quiz = response.get("quiz", None)
-                    if quiz is not None:
-                        table_data = get_table_data(quiz)
+                    if quiz_response is not None:
+                        table_data = get_table_data(quiz_response)
                         if table_data is not None:
                             df = pd.DataFrame(table_data)
                             df.index = df.index+1
                             st.table(df)
                             # Display the review in atext box as well
                             st.text_area(label="Review",
-                                         value=response["review"])
+                                         value=review_response)
                         else:
                             st.error("Error in the table data")
 
                 else:
-                    st.write(response)
+                    st.write(quiz_response)
