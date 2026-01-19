@@ -1,38 +1,9 @@
-1. first login to the AWS: https://aws.amazon.com/console/
+1. conda create --name env python=3.10    
 
-2. search about the EC2
+2. source activate env   
 
-3. you need to config the UBUNTU Machine
+3. pip install -r requirements.txt     
 
-4. launch the instance
+4. create .env file with AI21_API_KEY = YOUR_AI21_API_KEY
 
-5. update the machine:
-
-sudo apt update
-
-sudo apt-get update
-
-sudo apt upgrade -y
-
-sudo apt install git curl unzip tar make sudo vim wget -y
-
-git clone "Your-repository"
-
-sudo apt install python3-pip
-
-pip3 install -r requirements.txt
-
-python3 -m streamlit run StreamlitAPP.py
-
-##### if you want to add openai api key
-
-1. create .env file in your server
-touch .env
-
-vi .env
-#press insert
-#copy your api key and paste it there
-#press and then :wq and hit enter
-
-go with security and add the inbound rule
-add the port 8501
+5. streamlit run StreamlitApp.py    

@@ -4,8 +4,6 @@ from dotenv import load_dotenv
 import os
 
 # from mcqgenrator.utils import read_file
-
-
 load_dotenv()  # loads .env into environment
 api_key = os.getenv("AI21_API_KEY")
 

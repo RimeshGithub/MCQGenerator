@@ -27,24 +27,31 @@ def read_file(file_path: str):
 
 
 def get_table_data(quiz_str):
+    """
+    Converts a quiz JSON string into a list of dicts suitable for display in Streamlit.
+    Options will appear on separate lines.
+    """
     try:
-        # convert the quiz from a str to dict
+        # Convert the quiz string to dictionary
         quiz_dict = json.loads(quiz_str)
         quiz_table_data = []
 
-        # iterate over the quiz dictionary and extract the required information
         for key, value in quiz_dict.items():
             mcq = value["mcq"]
-            options = " || ".join(
-                [
-                    f"{option}-> {option_value}" for option, option_value in value["options"].items()
 
-                ]
+            # Create choices as HTML line breaks
+            options_html = "<br>".join(
+                [f"{option} -> {option_value}" for option,
+                    option_value in value["options"].items()]
             )
 
             correct = value["correct"]
-            quiz_table_data.append(
-                {"MCQ": mcq, "Choices": options, "Correct": correct})
+
+            quiz_table_data.append({
+                "MCQ": mcq,
+                "Choices": options_html,
+                "Correct": correct
+            })
 
         return quiz_table_data
 
