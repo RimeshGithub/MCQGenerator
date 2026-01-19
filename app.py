@@ -180,7 +180,7 @@ with st.form("user_inputs"):
                          max_chars=30, placeholder="Simple")
 
     # Add Button
-    button = st.form_submit_button("Create MCQs")
+    button = st.form_submit_button("Generate MCQs")
 
     # Check if the button is clicked and all fields have input
 
