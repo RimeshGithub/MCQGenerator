@@ -1,117 +1,96 @@
-import os
 import json
-import traceback
-import pandas as pd
+from langchain_ai21 import ChatAI21
 from dotenv import load_dotenv
+import os
 
-from mcqgenrator.utils import read_file, get_table_data
-from mcqgenrator.logger import logging
+# from mcqgenrator.utils import read_file
 
-# LangChain imports
-from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain, SequentialChain
 
-# Hugging Face LangChain LLM
-from langchain_huggingface import HuggingFaceEndpoint
+load_dotenv()  # loads .env into environment
+api_key = os.getenv("AI21_API_KEY")
 
-# Load environment variables
-load_dotenv()
+# -------- QUIZ GENERATION FUNCTION --------
 
-HF_TOKEN = os.getenv("HUGGINGFACEHUB_API_TOKEN")
-print("HF TOKEN loaded:", HF_TOKEN is not None)
 
-# -------- LLM SETUP (Hugging Face) --------
-llm = HuggingFaceEndpoint(
-    repo_id="google/flan-t5-large",  # text2text model (BEST for instructions)
-    task="text2text-generation",
-    huggingfacehub_api_token=HF_TOKEN,
-    temperature=0.3,
-    max_new_tokens=512
-)
+def generate_quiz(text, number, subject, tone, response_json):
+    prompt = f"""
+Text:
+{text}
 
-# -------- QUIZ GENERATION PROMPT --------
-quiz_template = """
-Text:{text}
-You are an expert MCQ maker. Given the above text, it is your job to \
-create a quiz of {number} multiple choice questions for {subject} students in {tone} tone.
+You are an expert MCQ maker. Given the above text, create a quiz of {number}
+multiple choice questions for {subject} students in a {tone} tone.
 
-Make sure:
-- Questions are NOT repeated
-- Questions strictly conform to the text
-- Exactly {number} MCQs are created
+Rules:
+- Questions must NOT be repeated
+- Questions must strictly come from the text
+- Create exactly {number} MCQs
 
-Format your response exactly like RESPONSE_JSON below.
+Format your response exactly like this JSON:
 
-### RESPONSE_JSON
-{response_json}
+{json.dumps(response_json, indent=2)}
 """
+    response = ChatAI21(
+        api_key=api_key,
+        model="jamba-large",
+        max_tokens=2000,
+        temperature=0.3
+    )
 
-quiz_generation_prompt = PromptTemplate(
-    input_variables=["text", "number", "subject", "tone", "response_json"],
-    template=quiz_template
-)
+    return response.invoke(prompt).content
 
-quiz_chain = LLMChain(
-    llm=llm,
-    prompt=quiz_generation_prompt,
-    output_key="quiz",
-    verbose=True
-)
 
-# -------- QUIZ REVIEW PROMPT --------
-review_template = """
-You are an expert English grammarian and writer.
+# -------- QUIZ REVIEW FUNCTION --------
+def review_quiz(subject, quiz):
+    prompt = f"""
+You are an expert English grammarian and educator.
 
-Given a Multiple Choice Quiz for {subject} students:
-- Analyze complexity (max 50 words)
-- Check if students can understand the questions
-- If not suitable, suggest improvements
-- Adjust tone to match student ability
+Given the following MCQs for {subject} students:
+- Analyze the complexity (max 50 words)
+- Check clarity and student understanding
+- Suggest improvements if needed
+- Adjust tone to student level
 
-Quiz_MCQs:
+Quiz:
 {quiz}
 
 Expert Review:
 """
+    response = ChatAI21(
+        api_key=api_key,
+        model="jamba-mini",
+        max_tokens=500,
+        temperature=0.3
+    )
 
-quiz_evaluation_prompt = PromptTemplate(
-    input_variables=["subject", "quiz"],
-    template=review_template
-)
+    return response.invoke(prompt).content
 
-review_chain = LLMChain(
-    llm=llm,
-    prompt=quiz_evaluation_prompt,
-    output_key="review",
-    verbose=True
-)
 
-# -------- SEQUENTIAL CHAIN --------
-generate_evaluate_chain = SequentialChain(
-    chains=[quiz_chain, review_chain],
-    input_variables=["text", "number", "subject", "tone", "response_json"],
-    output_variables=["quiz", "review"],
-    verbose=True
-)
+# -------- RUN PIPELINE --------
+# response_json_format = {
+#     "1": {
+#         "question": "",
+#         "options": {
+#             "a": "",
+#             "b": "",
+#             "c": "",
+#             "d": ""
+#         },
+#         "answer": ""
+#     }
+# }
 
-response = generate_evaluate_chain({
-    "text": "Artificial Intelligence is the simulation of human intelligence...",
-    "number": 5,
-    "subject": "Computer Science",
-    "tone": "simple",
-    "response_json": {
-        "1": {
-            "question": "",
-            "options": {
-                "a": "",
-                "b": "",
-                "c": "",
-                "d": ""
-            },
-            "answer": ""
-        }
-    }
-})
+# quiz = generate_quiz(
+#     text=read_file("test.txt"),
+#     number=3,
+#     subject="Data Science",
+#     tone="hard",
+#     response_json=response_json_format
+# )
 
-print(response["quiz"])
-print(response["review"])
+# review = review_quiz(
+#     subject="Data Science",
+#     quiz=quiz
+# )
+
+# print("QUIZ OUTPUT:\n", quiz)
+# print("\nREVIEW OUTPUT:\n", review)
