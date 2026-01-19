@@ -6,4 +6,4 @@
 
 4. create .env file with AI21_API_KEY = YOUR_AI21_API_KEY
 
-5. streamlit run StreamlitApp.py    
+5. streamlit run mcqgenrator/streamlitApp.py  
